@@ -2,6 +2,14 @@ const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../auth');
 
+function errorResponse(error, fallbackMessage) {
+  const status = error?.status || 500;
+  if (status !== 500) {
+    return { status, jsonBody: { error: error.message || 'Request failed' } };
+  }
+  return { status: 500, jsonBody: { error: fallbackMessage, detail: error.message } };
+}
+
 app.http('getEvents', {
   route: 'events',
   methods: ['GET'],
@@ -19,7 +27,7 @@ app.http('getEvents', {
       `);
       return { status: 200, jsonBody: result.recordset };
     } catch (error) {
-      return { status: 500, jsonBody: { error: 'Failed to fetch events', detail: error.message } };
+      return errorResponse(error, 'Failed to fetch events');
     }
   }
 });
@@ -115,7 +123,7 @@ app.http('createEvent', {
       return { status: 201, jsonBody: inserted.recordset[0] };
     } catch (error) {
       try { if (tx) await tx.rollback(); } catch {}
-      return { status: 500, jsonBody: { error: 'Failed to create event', detail: error.message } };
+      return errorResponse(error, 'Failed to create event');
     }
   }
 });

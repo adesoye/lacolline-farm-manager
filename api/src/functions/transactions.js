@@ -2,6 +2,14 @@ const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../auth');
 
+function errorResponse(error, fallbackMessage) {
+  const status = error?.status || 500;
+  if (status !== 500) {
+    return { status, jsonBody: { error: error.message || 'Request failed' } };
+  }
+  return { status: 500, jsonBody: { error: fallbackMessage, detail: error.message } };
+}
+
 app.http('getTransactions', {
   route: 'transactions',
   methods: ['GET'],
@@ -18,7 +26,7 @@ app.http('getTransactions', {
       `);
       return { status: 200, jsonBody: result.recordset };
     } catch (error) {
-      return { status: 500, jsonBody: { error: 'Failed to fetch transactions', detail: error.message } };
+      return errorResponse(error, 'Failed to fetch transactions');
     }
   }
 });
@@ -71,7 +79,7 @@ app.http('createTransaction', {
 
       return { status: 201, jsonBody: result.recordset[0] };
     } catch (error) {
-      return { status: 500, jsonBody: { error: 'Failed to create transaction', detail: error.message } };
+      return errorResponse(error, 'Failed to create transaction');
     }
   }
 });
@@ -97,7 +105,7 @@ app.http('deleteTransaction', {
 
       return { status: 204 };
     } catch (error) {
-      return { status: 500, jsonBody: { error: 'Failed to delete transaction', detail: error.message } };
+      return errorResponse(error, 'Failed to delete transaction');
     }
   }
 });

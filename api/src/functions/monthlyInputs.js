@@ -2,6 +2,14 @@ const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../auth');
 
+function errorResponse(error, fallbackMessage) {
+  const status = error?.status || 500;
+  if (status !== 500) {
+    return { status, jsonBody: { error: error.message || 'Request failed' } };
+  }
+  return { status: 500, jsonBody: { error: fallbackMessage, detail: error.message } };
+}
+
 function parseSpecificPigs(value) {
   if (!value) return [];
   try {
@@ -38,7 +46,7 @@ app.http('getMonthlyInputs', {
       }));
       return { status: 200, jsonBody: mapped };
     } catch (error) {
-      return { status: 500, jsonBody: { error: 'Failed to fetch monthly inputs', detail: error.message } };
+      return errorResponse(error, 'Failed to fetch monthly inputs');
     }
   }
 });
@@ -167,7 +175,7 @@ app.http('createMonthlyInput', {
       };
     } catch (error) {
       try { if (tx) await tx.rollback(); } catch {}
-      return { status: 500, jsonBody: { error: 'Failed to create monthly input', detail: error.message } };
+      return errorResponse(error, 'Failed to create monthly input');
     }
   }
 });
@@ -203,7 +211,7 @@ app.http('deleteMonthlyInput', {
       return { status: 204 };
     } catch (error) {
       try { if (tx) await tx.rollback(); } catch {}
-      return { status: 500, jsonBody: { error: 'Failed to delete monthly input', detail: error.message } };
+      return errorResponse(error, 'Failed to delete monthly input');
     }
   }
 });
