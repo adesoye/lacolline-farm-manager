@@ -1,12 +1,14 @@
 const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
+const { requireAuth } = require('../auth');
 
 app.http('getPigs', {
   route: 'pigs',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: async () => {
+  handler: async (request) => {
     try {
+      requireAuth(request);
       const pool = await getPool();
       const result = await pool.request().query(`
         SELECT id, tag, name, type, breed, dob, source, purchase_price AS purchasePrice,
@@ -27,6 +29,7 @@ app.http('createPig', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const body = await request.json();
       const { tag, name, type, breed, dob, source, purchasePrice, notes, sourceLocalId } = body || {};
 
@@ -84,6 +87,7 @@ app.http('deletePig', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const id = request.params.id;
       if (!id) return { status: 400, jsonBody: { error: 'id is required' } };
 

@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
+const { requireAuth } = require('../auth');
 
 function parseSpecificPigs(value) {
   if (!value) return [];
@@ -15,8 +16,9 @@ app.http('getMonthlyInputs', {
   route: 'monthly-inputs',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: async () => {
+  handler: async (request) => {
     try {
+      requireAuth(request);
       const pool = await getPool();
       const result = await pool.request().query(`
         SELECT id, [month], category, product, scope,
@@ -48,6 +50,7 @@ app.http('createMonthlyInput', {
   handler: async (request) => {
     let tx;
     try {
+      requireAuth(request);
       const body = await request.json();
       const {
         month,
@@ -176,6 +179,7 @@ app.http('deleteMonthlyInput', {
   handler: async (request) => {
     let tx;
     try {
+      requireAuth(request);
       const id = request.params.id;
       if (!id) return { status: 400, jsonBody: { error: 'id is required' } };
 

@@ -1,12 +1,14 @@
 const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
+const { requireAuth } = require('../auth');
 
 app.http('getEvents', {
   route: 'events',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: async () => {
+  handler: async (request) => {
     try {
+      requireAuth(request);
       const pool = await getPool();
       const result = await pool.request().query(`
         SELECT id, pig_id AS pigId, [date], [type], sale_price AS salePrice,
@@ -29,6 +31,7 @@ app.http('createEvent', {
   handler: async (request) => {
     let tx;
     try {
+      requireAuth(request);
       const body = await request.json();
       const { pigId, date, type, notes, salePrice, saleWeight, litterSize, sourceLocalId } = body || {};
 

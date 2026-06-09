@@ -1,12 +1,14 @@
 const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
+const { requireAuth } = require('../auth');
 
 app.http('getTransactions', {
   route: 'transactions',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: async () => {
+  handler: async (request) => {
     try {
+      requireAuth(request);
       const pool = await getPool();
       const result = await pool.request().query(`
         SELECT id, [date], [type], category, [description], amount,
@@ -27,6 +29,7 @@ app.http('createTransaction', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const body = await request.json();
       const { date, type, category, description, amount, method, ref, sourceLocalId } = body || {};
 
@@ -79,6 +82,7 @@ app.http('deleteTransaction', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const id = request.params.id;
       if (!id) return { status: 400, jsonBody: { error: 'id is required' } };
 

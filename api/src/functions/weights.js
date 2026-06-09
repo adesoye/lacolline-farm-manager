@@ -1,12 +1,14 @@
 const { app } = require('@azure/functions');
 const { getPool, sql } = require('../db');
+const { requireAuth } = require('../auth');
 
 app.http('getWeights', {
   route: 'weights',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: async () => {
+  handler: async (request) => {
     try {
+      requireAuth(request);
       const pool = await getPool();
       const result = await pool.request().query(`
         SELECT id, pig_id AS pigId, [date], weight, bcs, notes, created_at AS createdAt
@@ -26,6 +28,7 @@ app.http('createWeight', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const body = await request.json();
       const { pigId, date, weight, bcs, notes, sourceLocalId } = body || {};
 
@@ -75,6 +78,7 @@ app.http('deleteWeight', {
   authLevel: 'anonymous',
   handler: async (request) => {
     try {
+      requireAuth(request);
       const id = request.params.id;
       if (!id) return { status: 400, jsonBody: { error: 'id is required' } };
 
