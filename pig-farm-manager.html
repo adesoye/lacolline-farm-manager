@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lacoline Pig Farm Manager</title>
+<!-- Styles are in styles.css -->
+<link rel="stylesheet" href="styles.css">
+<style>
+  :root {
+    --primary: #2d6a4f;
+    --primary-light: #52b788;
+    --primary-dark: #1b4332;
+    --accent: #f77f00;
+    --accent-light: #fca43c;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --danger: #dc3545;
+    --success: #198754;
+    --warning: #ffc107;
+    --info: #0dcaf0;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--primary-dark); color: #fff;
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+    overflow-y: auto;
+  }
+  #sidebar .brand { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  #sidebar .brand h1 { font-size: 1.1rem; font-weight: 700; }
+  #sidebar .brand p { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.88rem; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  #sidebar nav a.active { background: var(--primary); color: #fff; font-weight: 600; }
+  #sidebar nav a .icon { font-size: 1.1rem; width: 20px; text-align: center; }
+  #sidebar .sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.72rem; color: rgba(255,255,255,0.4); }
+
+  /* Main */
+  #main { margin-left: var(--sidebar-w); flex: 1; padding: 24px; min-width: 0; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 20px; }
+  .page-header h2 { font-size: 1.4rem; font-weight: 700; color: var(--primary-dark); }
+  .page-header p { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
+
+  /* Cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
+
+  /* Stat cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stat-card .val { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); }
+  .stat-card .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .stat-card.accent .val { color: var(--accent); }
+  .stat-card.green .val { color: var(--success); }
+  .stat-card.red .val { color: var(--danger); }
+
+  /* Forms */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+  input, select, textarea {
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.88rem; font-family: inherit; background: #fff; color: var(--text);
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-light); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; border: none; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead th { background: var(--bg); padding: 10px 12px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover td { background: #f1f8f4; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .badge-active { background: #d1fadf; color: #166534; }
+  .badge-sold { background: #fef9c3; color: #854d0e; }
+  .badge-dead { background: #fee2e2; color: #991b1b; }
+  .badge-boar { background: #dbeafe; color: #1e40af; }
+  .badge-sow { background: #fce7f3; color: #9d174d; }
+  .badge-piglet { background: #f3e8ff; color: #6b21a8; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 0.88rem; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; transition: color 0.15s; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Misc */
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row .card { flex: 1; min-width: 280px; }
+  .mt { margin-top: 16px; }
+  .text-success { color: var(--success); }
+  .text-danger { color: var(--danger); }
+  .text-muted { color: var(--text-muted); }
+  .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.88rem; }
+  .separator { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .alert { padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; }
+  .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+  .alert-success { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+  .chip { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; color: var(--text-muted); }
+
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    #sidebar { transform: translateX(-220px); transition: transform 0.25s; }
+    #sidebar.open { transform: translateX(0); width: 220px; }
+    #main { margin-left: 0; padding: 16px; }
+    #menu-btn { display: flex !important; }
+  }
+  #menu-btn { display: none; position: fixed; top: 12px; left: 12px; z-index: 200; background: var(--primary-dark); color: #fff; border: none; border-radius: 6px; padding: 8px 10px; cursor: pointer; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="pig-icon">🐷</div>
+      <h1>Lacoline Farm</h1>
+      <p>Pig Farm Management System</p>
+    </div>
+    <form class="login-form" onsubmit="doLogin(event)">
+      <div id="login-error" class="login-error">Incorrect username or password.</div>
+      <div class="form-group">
+        <label>Username</label>
+        <input id="login-username" type="text" placeholder="Enter your username" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="login-password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" onclick="togglePw('login-password',this)">👁</button>
+        </div>
+      </div>
+      <button type="submit" class="btn-login">Sign In →</button>
+    </form>
+    <div class="login-footer">Lacoline Farm · Data stored locally in browser</div>
+  </div>
+</div>
+
+<!-- ===================== APP (shown after login) ===================== -->
+<div id="app">
+
+<button id="menu-btn" onclick="toggleSidebar()">☰</button>
+
+<nav id="sidebar">
+  <div class="brand">
+    <h1>🐷 Lacoline Farm</h1>
+    <p>Pig Farm Manager</p>
+  </div>
+  <nav id="nav">
+    <a class="active" onclick="showPage('dashboard')" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
+    <a onclick="showPage('pigs')" data-page="pigs"><span class="icon">🐖</span> Pig Inventory</a>
+    <a onclick="showPage('feed-log')" data-page="feed-log"><span class="icon">🌽</span> Daily Feed Log</a>
+    <a onclick="showPage('feed-stock')" data-page="feed-stock"><span class="icon">📦</span> Feed Stock</a>
+    <a onclick="showPage('weights')" data-page="weights"><span class="icon">⚖️</span> Weight Records</a>
+    <a onclick="showPage('finance')" data-page="finance"><span class="icon">💰</span> Expenses & Income</a>
+    <a onclick="showPage('monthly')" data-page="monthly"><span class="icon">💊</span> Monthly Inputs</a>
+    <a onclick="showPage('reports')" data-page="reports"><span class="icon">📈</span> Reports</a>
+    <a class="admin-only" onclick="showPage('users')" data-page="users"><span class="icon">👥</span> User Management</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="avatar" id="sidebar-avatar">A</div>
+    <div class="user-info">
+      <div class="user-name" id="sidebar-uname">—</div>
+      <div class="user-role" id="sidebar-urole">—</div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()" title="Sign out">⏏</button>
+  </div>
+</nav>
+
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-header">
+      <h2>Farm Dashboard</h2>
+      <p id="dash-date"></p>
+    </div>
+    <div class="stats-grid" id="dash-stats"></div>
+    <div class="row">
+      <div class="card">
+        <div class="card-title">Recent Feed Logs</div>
+        <div id="dash-feed-recent"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Feed Stock Alerts</div>
+        <div id="dash-stock-alerts"></div>
+      </div>
+    </div>
+    <div class="row mt">
+      <div class="card">
+        <div class="card-title">Recent Transactions</div>
+        <div id="dash-finance-recent"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Weight Records</div>
+        <div id="dash-weights-recent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIG INVENTORY -->
+  <div id="page-pigs" class="page">
+    <div class="page-header">
+      <h2>Pig Inventory</h2>
+      <p>Add and manage your pigs. Record births, deaths, and sales.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('pigs','list')">All Pigs</button>
+      <button class="tab" onclick="switchTab('pigs','add')">Add Pig</button>
+      <button class="tab" onclick="switchTab('pigs','event')">Record Event</button>
+    </div>
+    <div id="pigs-tab-list" class="tab-panel active">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <input id="pig-search" placeholder="Search by tag or name…" style="max-width:220px" oninput="renderPigTable()">
+        <select id="pig-filter-status" onchange="renderPigTable()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="sold">Sold</option>
+          <option value="dead">Dead</option>
+        </select>
+        <select id="pig-filter-type" onchange="renderPigTable()">
+          <option value="">All Types</option>
+          <option value="boar">Boar</option>
+          <option value="sow">Sow</option>
+          <option value="piglet">Piglet</option>
+          <option value="grower">Grower</option>
+          <option value="finisher">Finisher</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table id="pig-table">
+        <thead><tr><th>Tag/ID</th><th>Name</th><th>Type</th><th>DOB / Acquired</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="pig-tbody"></tbody>
+      </table></div>
+    </div>
+    <div id="pigs-tab-add" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Register New Pig</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Tag / ID *</label><input id="pig-tag" placeholder="e.g. PIG-001"></div>
+          <div class="form-group"><label>Name (optional)</label><input id="pig-name" placeholder="e.g. Bessie"></div>
+          <div class="form-group"><label>Type *</label>
+            <select id="pig-type">
+              <option value="sow">Sow</option><option value="boar">Boar</option>
+              <option value="piglet">Piglet</option><option value="grower">Grower</option><option value="finisher">Finisher</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Breed</label><input id="pig-breed" placeholder="e.g. Large White"></div>
+          <div class="form-group"><label>Date of Birth / Acquired *</label><input type="date" id="pig-dob"></div>
+          <div class="form-group"><label>Source</label>
+            <select id="pig-source"><option value="born">Born on farm</option><option value="purchased">Purchased</option></select>
+          </div>
+          <div class="form-group"><label>Purchase Price (₦)</label><input type="number" id="pig-price" placeholder="0.00" min="0"></div>
+          <div class="form-group"><label>Initial Weight (kg)</label><input type="number" id="pig-init-weight" placeholder="0.0" min="0" step="0.1"></div>
+        </div>
+        <div class="form-group mt"><label>Notes</label><textarea id="pig-notes" placeholder="Any additional notes…"></textarea></div>
+        <div class="mt"><button class="btn btn-primary" onclick="addPig()">➕ Register Pig</button></div>
+      </div>
+    </div>
+    <div id="pigs-tab-event" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Record Pig Event (Birth / Death / Sale)</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Pig *</label><select id="event-pig-id"></select></div>
+          <div class="form-group"><label>Event Type *</label>
+            <select id="event-type" onchange="toggleEventFields()">
+              <option value="sold">Sold</option><option value="dead">Died</option><option value="farrowed">Farrowed (gave birth)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Date *</label><input type="date" id="event-date"></div>
+          <div class="form-group" id="event-sale-price-grp"><label>Sale Price (₦)</label><input type="number" id="event-sale-price" min="0" placeholder="0.00"></div>
+          <div class="form-group" id="event-sale-weight-grp"><label>Sale Weight (kg)</label><input type="number" id="event-sale-weight" min="0" step="0.1" placeholder="0.0"></div>
+          <div class="form-group" id="event-litter-grp"><label>Litter Size</label><input type="number" id="event-litter" min="1" placeholder="e.g. 10"></div>
+        </div>
+        <div class="form-group mt"><label>Notes / Cause (if death)</label><textarea id="event-notes"></textarea></div>
+        <div class="mt"><button class="btn btn-accent" onclick="recordEvent()">Save Event</button></div>
+      </div>
+      <div class="card mt">
+        <div class="card-title">Event History</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Pig</th><th>Event</th><th>Details</th></tr></thead>
+          <tbody id="event-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY FEED LOG -->
+  <div id="page-feed-log" class="page">
+    <div class="page-header">
+      <h2>Daily Feed Log</h2>
+      <p>Record feed given to each pig or pen per day.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('feed','log')">Log Feed</button>
+      <button class="tab" onclick="switchTab('feed','history')">History</button>
+      <button class="tab" onclick="switchTab('feed','summary')">Daily Summary</button>
+    </div>
+    <div id="feed-tab-log" class="tab-panel active">
+      <div class="card">
+        <div class="card-title">Record Feed Entry</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Date *</label><input type="date" id="fl-date"></div>
+          <div class="form-group"><label>Pig / Pen *</label><select id="fl-pig"></select></div>
+          <div class="form-group"><label>Feed Type *</label>
+            <select id="fl-feed-type">
+              <option value="starter">Starter</option><option value="grower">Grower</option>
+              <option value="finisher">Finisher</option><option value="sow-lactating">Sow (Lactating)</option>
+              <option value="sow-gestation">Sow (Gestation)</option><option value="boar">Boar Feed</option><option value="custom">Custom/Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Amount (kg) *</label><input type="number" id="fl-amount" min="0" step="0.1" placeholder="e.g. 2.5"></div>
+          <div class="form-group"><label>Cost per kg (₦)</label><input type="number" id="fl-cost-per-kg" min="0" step="0.01" placeholder="auto from stock"></div>
+          <div class="form-group"><label>Feeding Time</label>
+            <select id="fl-time"><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option><option value="all-day">All Day</option></select>
+          </div>
+        </div>
+        <div class="form-group mt"><label>Notes</label><textarea id="fl-notes" placeholder="Observations, appetite, etc."></textarea></div>
+        <div class="mt"><button class="btn btn-primary" onclick="addFeedLog()">➕ Log Feed</button></div>
+      </div>
+    </div>
+    <div id="feed-tab-history" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="date" id="fl-hist-from" oninput="renderFeedHistory()">
+        <input type="date" id="fl-hist-to" oninput="renderFeedHistory()">
+        <select id="fl-hist-pig" onchange="renderFeedHistory()"><option value="">All Pigs</option></select>
+        <button class="btn btn-outline btn-sm" onclick="clearFeedFilter()">Clear</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Pig/Pen</th><th>Feed Type</th><th>Time</th><th>Amount (kg)</th><th>Cost (₦)</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="fl-hist-tbody"></tbody>
+      </table></div>
+    </div>
+    <div id="feed-tab-summary" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Date</label><input type="date" id="fl-sum-date" oninput="renderFeedSummary()"></div>
+      </div>
+      <div id="fl-summary-content"></div>
+    </div>
+  </div>
+
+  <!-- FEED STOCK -->
+  <div id="page-feed-stock" class="page">
+    <div class="page-header">
+      <h2>Feed Stock & Purchases</h2>
+      <p>Track feed inventory, purchases, and consumption.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('stock','levels')">Stock Levels</button>
+      <button class="tab" onclick="switchTab('stock','purchase')">Record Purchase</button>
+      <button class="tab" onclick="switchTab('stock','history')">Purchase History</button>
+    </div>
+    <div id="stock-tab-levels" class="tab-panel active">
+      <div id="stock-levels-content"></div>
+    </div>
+    <div id="stock-tab-purchase" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Record Feed Purchase</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Date *</label><input type="date" id="sp-date"></div>
+          <div class="form-group"><label>Feed Type *</label>
+            <select id="sp-type">
+              <option value="starter">Starter</option><option value="grower">Grower</option>
+              <option value="finisher">Finisher</option><option value="sow-lactating">Sow (Lactating)</option>
+              <option value="sow-gestation">Sow (Gestation)</option><option value="boar">Boar Feed</option><option value="custom">Custom/Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Quantity (kg) *</label><input type="number" id="sp-qty" min="0.1" step="0.1" placeholder="e.g. 50"></div>
+          <div class="form-group"><label>Cost per kg (₦) *</label><input type="number" id="sp-cost-per-kg" min="0" step="0.01" placeholder="e.g. 350"></div>
+          <div class="form-group"><label>Supplier</label><input id="sp-supplier" placeholder="Supplier name"></div>
+          <div class="form-group"><label>Reorder Level (kg)</label><input type="number" id="sp-reorder" min="0" placeholder="Alert when below this"></div>
+        </div>
+        <div class="form-group mt"><label>Notes</label><textarea id="sp-notes"></textarea></div>
+        <div class="mt"><button class="btn btn-primary" onclick="addPurchase()">➕ Record Purchase</button></div>
+      </div>
+    </div>
+    <div id="stock-tab-history" class="tab-panel">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Feed Type</th><th>Qty (kg)</th><th>Cost/kg (₦)</th><th>Total (₦)</th><th>Supplier</th><th></th></tr></thead>
+        <tbody id="sp-hist-tbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- WEIGHT RECORDS -->
+  <div id="page-weights" class="page">
+    <div class="page-header">
+      <h2>Weight Records</h2>
+      <p>Track pig weights and monitor growth performance.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('wt','add')">Record Weight</button>
+      <button class="tab" onclick="switchTab('wt','history')">History</button>
+      <button class="tab" onclick="switchTab('wt','growth')">Growth Analysis</button>
+    </div>
+    <div id="wt-tab-add" class="tab-panel active">
+      <div class="card">
+        <div class="card-title">Record Weight Measurement</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Date *</label><input type="date" id="wt-date"></div>
+          <div class="form-group"><label>Pig *</label><select id="wt-pig"></select></div>
+          <div class="form-group"><label>Weight (kg) *</label><input type="number" id="wt-weight" min="0" step="0.1" placeholder="e.g. 45.5"></div>
+          <div class="form-group"><label>Body Condition Score</label>
+            <select id="wt-bcs"><option value="">-</option><option value="1">1 - Emaciated</option><option value="2">2 - Thin</option><option value="3">3 - Ideal</option><option value="4">4 - Fat</option><option value="5">5 - Obese</option></select>
+          </div>
+        </div>
+        <div class="form-group mt"><label>Notes</label><textarea id="wt-notes"></textarea></div>
+        <div class="mt"><button class="btn btn-primary" onclick="addWeight()">➕ Save Record</button></div>
+      </div>
+    </div>
+    <div id="wt-tab-history" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <select id="wt-hist-pig" onchange="renderWeightHistory()"><option value="">All Pigs</option></select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Pig</th><th>Weight (kg)</th><th>Change</th><th>BCS</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="wt-hist-tbody"></tbody>
+      </table></div>
+    </div>
+    <div id="wt-tab-growth" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Select Pig</label><select id="wt-growth-pig" onchange="renderGrowthAnalysis()"><option value="">All Active Pigs</option></select></div>
+      </div>
+      <div id="wt-growth-content"></div>
+    </div>
+  </div>
+
+  <!-- FINANCES -->
+  <div id="page-finance" class="page">
+    <div class="page-header">
+      <h2>Expenses & Income</h2>
+      <p>Full bookkeeping: track all farm financial transactions.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('fin','add')">Add Transaction</button>
+      <button class="tab" onclick="switchTab('fin','ledger')">Ledger</button>
+      <button class="tab" onclick="switchTab('fin','summary')">Summary</button>
+    </div>
+    <div id="fin-tab-add" class="tab-panel active">
+      <div class="card">
+        <div class="card-title">Record Transaction</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Date *</label><input type="date" id="fin-date"></div>
+          <div class="form-group"><label>Type *</label>
+            <select id="fin-type" onchange="updateFinCategories()">
+              <option value="expense">Expense</option><option value="income">Income</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Category *</label><select id="fin-category"></select></div>
+          <div class="form-group"><label>Amount (₦) *</label><input type="number" id="fin-amount" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="form-group"><label>Payment Method</label>
+            <select id="fin-method"><option value="cash">Cash</option><option value="bank">Bank Transfer</option><option value="mobile">Mobile Money</option><option value="credit">Credit</option></select>
+          </div>
+          <div class="form-group"><label>Reference #</label><input id="fin-ref" placeholder="Receipt / invoice number"></div>
+        </div>
+        <div class="form-group mt"><label>Description *</label><input id="fin-desc" placeholder="Brief description of the transaction"></div>
+        <div class="mt"><button class="btn btn-primary" onclick="addTransaction()">➕ Add Transaction</button></div>
+      </div>
+    </div>
+    <div id="fin-tab-ledger" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="date" id="fin-from" oninput="renderLedger()">
+        <input type="date" id="fin-to" oninput="renderLedger()">
+        <select id="fin-filter-type" onchange="renderLedger()"><option value="">All</option><option value="income">Income</option><option value="expense">Expense</option></select>
+        <select id="fin-filter-cat" onchange="renderLedger()"><option value="">All Categories</option></select>
+        <button class="btn btn-outline btn-sm" onclick="clearFinFilter()">Clear</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Method</th><th>Ref</th><th>Amount (₦)</th><th></th></tr></thead>
+        <tbody id="fin-ledger-tbody"></tbody>
+      </table></div>
+    </div>
+    <div id="fin-tab-summary" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Month</label><input type="month" id="fin-sum-month" oninput="renderFinSummary()"></div>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('fin-sum-month').value='';renderFinSummary()">Show All</button>
+      </div>
+      <div id="fin-summary-content"></div>
+    </div>
+  </div>
+
+  <!-- MONTHLY INPUTS -->
+  <div id="page-monthly" class="page">
+    <div class="page-header">
+      <h2>Monthly Inputs</h2>
+      <p>Record bulk herd-wide inputs administered monthly — medications, vaccines, dewormers, vitamins, supplements, etc.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('mon','add')">Record Input</button>
+      <button class="tab" onclick="switchTab('mon','history')">All Records</button>
+      <button class="tab" onclick="switchTab('mon','summary')">Monthly Summary</button>
+    </div>
+
+    <!-- Record Input -->
+    <div id="mon-tab-add" class="tab-panel active">
+      <div class="card">
+        <div class="card-title">Record Monthly Input</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Month *</label><input type="month" id="mon-month"></div>
+          <div class="form-group"><label>Category *</label>
+            <select id="mon-category" onchange="updateMonSubcategory()">
+              <option value="medication">Medication</option>
+              <option value="vaccine">Vaccine</option>
+              <option value="dewormer">Dewormer / Antiparasitic</option>
+              <option value="vitamin">Vitamin / Supplement</option>
+              <option value="disinfectant">Disinfectant / Biosecurity</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Product Name *</label><input id="mon-product" placeholder="e.g. Ivermectin, OxyTetracycline"></div>
+          <div class="form-group"><label>Applied To</label>
+            <select id="mon-scope" onchange="updateMonScopeVisibility()">
+              <option value="whole-herd">Whole Herd</option>
+              <option value="sows">Sows Only</option>
+              <option value="piglets">Piglets Only</option>
+              <option value="growers">Growers Only</option>
+              <option value="finishers">Finishers Only</option>
+              <option value="boars">Boars Only</option>
+              <option value="specific">Specific Pig(s)</option>
+            </select>
+          </div>
+          <div class="form-group" id="mon-specific-pig-grp" style="display:none"><label>Select Pig(s)</label><select id="mon-specific-pig" multiple style="min-height:80px"></select></div>
+          <div class="form-group"><label>Quantity / Dose</label><input id="mon-qty" placeholder="e.g. 500ml, 20 tablets, 2kg"></div>
+          <div class="form-group"><label>Unit Cost (₦)</label><input type="number" id="mon-unit-cost" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="form-group"><label>Total Cost (₦)</label><input type="number" id="mon-total-cost" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="form-group"><label>Administered By</label><input id="mon-by" placeholder="e.g. Farm Manager, Vet Dr. Ade"></div>
+          <div class="form-group"><label>Next Due Date</label><input type="date" id="mon-next-due"></div>
+          <div class="form-group"><label>Supplier / Brand</label><input id="mon-supplier" placeholder="Supplier or brand name"></div>
+          <div class="form-group"><label>Withdrawal Period (days)</label><input type="number" id="mon-withdrawal" min="0" placeholder="Days before slaughter"></div>
+        </div>
+        <div class="form-group mt"><label>Purpose / Notes</label><textarea id="mon-notes" placeholder="Reason for administration, observations, dosage instructions…"></textarea></div>
+        <div class="mt" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="addMonthlyInput()">➕ Save Record</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+            <input type="checkbox" id="mon-add-expense" checked> Auto-add to Expenses
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Records -->
+    <div id="mon-tab-history" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Month</label><input type="month" id="mon-hist-month" oninput="renderMonthlyHistory()"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="mon-hist-cat" onchange="renderMonthlyHistory()">
+            <option value="">All Categories</option>
+            <option value="medication">Medication</option>
+            <option value="vaccine">Vaccine</option>
+            <option value="dewormer">Dewormer</option>
+            <option value="vitamin">Vitamin / Supplement</option>
+            <option value="disinfectant">Disinfectant</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="clearMonFilter()">Clear</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Month</th><th>Category</th><th>Product</th><th>Applied To</th><th>Qty/Dose</th><th>Total Cost</th><th>Administered By</th><th>Next Due</th><th></th></tr></thead>
+        <tbody id="mon-hist-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- Monthly Summary -->
+    <div id="mon-tab-summary" class="tab-panel">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>Select Month</label><input type="month" id="mon-sum-month" oninput="renderMonthlySummary()"></div>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('mon-sum-month').value='';renderMonthlySummary()">Show All</button>
+      </div>
+      <div id="mon-summary-content"></div>
+    </div>
+  </div>
+
+  <!-- USER MANAGEMENT (admin only) -->
+  <div id="page-users" class="page">
+    <div class="page-header">
+      <h2>User Management</h2>
+      <p>Add, edit, and manage who can access this system.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('usr','list')">All Users</button>
+      <button class="tab" onclick="switchTab('usr','add')">Add User</button>
+      <button class="tab" onclick="switchTab('usr','pw')">Change Password</button>
+    </div>
+
+    <!-- User List -->
+    <div id="usr-tab-list" class="tab-panel active">
+      <div class="table-wrap"><table>
+        <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Created</th><th>Last Login</th><th>Status</th><th></th></tr></thead>
+        <tbody id="usr-list-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- Add User -->
+    <div id="usr-tab-add" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Create New User</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Full Name *</label><input id="usr-fullname" placeholder="e.g. Bola Adeyemi"></div>
+          <div class="form-group"><label>Username *</label><input id="usr-username" placeholder="e.g. bola.adeyemi"></div>
+          <div class="form-group"><label>Role *</label>
+            <select id="usr-role">
+              <option value="user">User — can add records, no admin access</option>
+              <option value="manager">Manager — all access except user management</option>
+              <option value="admin">Admin — full access including user management</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Password *</label>
+            <div class="pw-wrap">
+              <input type="password" id="usr-pw" placeholder="Set a password">
+              <button type="button" class="pw-toggle" onclick="togglePw('usr-pw',this)">👁</button>
+            </div>
+          </div>
+          <div class="form-group"><label>Confirm Password *</label>
+            <div class="pw-wrap">
+              <input type="password" id="usr-pw2" placeholder="Repeat password">
+              <button type="button" class="pw-toggle" onclick="togglePw('usr-pw2',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <div class="mt"><button class="btn btn-primary" onclick="addUser()">➕ Create User</button></div>
+      </div>
+    </div>
+
+    <!-- Change Password -->
+    <div id="usr-tab-pw" class="tab-panel">
+      <div class="card">
+        <div class="card-title">Reset / Change Password</div>
+        <div class="form-grid">
+          <div class="form-group"><label>User *</label><select id="usr-pw-target"></select></div>
+          <div class="form-group"><label>New Password *</label>
+            <div class="pw-wrap">
+              <input type="password" id="usr-new-pw" placeholder="New password">
+              <button type="button" class="pw-toggle" onclick="togglePw('usr-new-pw',this)">👁</button>
+            </div>
+          </div>
+          <div class="form-group"><label>Confirm *</label>
+            <div class="pw-wrap">
+              <input type="password" id="usr-new-pw2" placeholder="Confirm new password">
+              <button type="button" class="pw-toggle" onclick="togglePw('usr-new-pw2',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <div class="mt"><button class="btn btn-accent" onclick="changePassword()">🔑 Update Password</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="page-reports" class="page">
+    <div class="page-header">
+      <h2>Reports</h2>
+      <p>Overview and export of farm data.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Quick Report</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group"><label>From</label><input type="date" id="rep-from"></div>
+        <div class="form-group"><label>To</label><input type="date" id="rep-to"></div>
+        <button class="btn btn-primary" onclick="renderReport()">Generate Report</button>
+        <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-outline" onclick="exportData()">⬇ Backup JSON</button>
+        <button class="btn btn-outline btn-sm" style="border-color:var(--danger);color:var(--danger)" onclick="importData()">⬆ Restore JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+      </div>
+    </div>
+    <div id="report-content" class="mt"></div>
+  </div>
+
+</main>
+
+</div><!-- #app -->
+
+<!-- App logic is in app.js -->
+<script src="app.js"></script>
+<script>
+// ===================== DATA LAYER =====================
+const DB_KEY = 'lacoline_farm_v1';
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || defaultDB(); }
+  catch { return defaultDB(); }
+}
+function defaultDB() {
+  return { pigs: [], events: [], feedLogs: [], purchases: [], weights: [], transactions: [], feedReorderLevels: {}, monthlyInputs: [] };
+}
+function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+let db = loadDB();
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function today() { return new Date().toISOString().slice(0, 10); }
+function fmt(n, d=0) { return Number(n||0).toLocaleString('en-NG', {minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtMoney(n) { return '₦' + fmt(n, 2); }
+
+// ===================== NAV =====================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'pigs') { renderPigTable(); renderEventTable(); populatePigSelects(); }
+  if (page === 'feed-log') { populatePigSelects(); renderFeedHistory(); renderFeedSummary(); }
+  if (page === 'feed-stock') { renderStockLevels(); renderPurchaseHistory(); }
+  if (page === 'weights') { populatePigSelects(); renderWeightHistory(); renderGrowthAnalysis(); }
+  if (page === 'finance') { updateFinCategories(); renderLedger(); renderFinSummary(); }
+  if (page === 'monthly') { populatePigSelects(); renderMonthlyHistory(); renderMonthlySummary(); }
+  if (page === 'reports') renderReport();
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function switchTab(ns, tab) {
+  document.querySelectorAll(`#page-${ns === 'pigs' ? 'pigs' : ns === 'feed' ? 'feed-log' : ns === 'stock' ? 'feed-stock' : ns === 'wt' ? 'weights' : 'finance'} .tab`).forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(`#page-${ns === 'pigs' ? 'pigs' : ns === 'feed' ? 'feed-log' : ns === 'stock' ? 'feed-stock' : ns === 'wt' ? 'weights' : 'finance'} .tab-panel`).forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  const panelMap = {pigs:{list:'pigs-tab-list',add:'pigs-tab-add',event:'pigs-tab-event'}, feed:{log:'feed-tab-log',history:'feed-tab-history',summary:'feed-tab-summary'}, stock:{levels:'stock-tab-levels',purchase:'stock-tab-purchase',history:'stock-tab-history'}, wt:{add:'wt-tab-add',history:'wt-tab-history',growth:'wt-tab-growth'}, fin:{add:'fin-tab-add',ledger:'fin-tab-ledger',summary:'fin-tab-summary'}, mon:{add:'mon-tab-add',history:'mon-tab-history',summary:'mon-tab-summary'}};
+  document.getElementById(panelMap[ns][tab]).classList.add('active');
+  if (ns==='pigs'&&tab==='event') populatePigSelects();
+  if (ns==='feed'&&tab==='history') renderFeedHistory();
+  if (ns==='feed'&&tab==='summary') renderFeedSummary();
+  if (ns==='stock'&&tab==='levels') renderStockLevels();
+  if (ns==='stock'&&tab==='history') renderPurchaseHistory();
+  if (ns==='wt'&&tab==='history') renderWeightHistory();
+  if (ns==='wt'&&tab==='growth') renderGrowthAnalysis();
+  if (ns==='fin'&&tab==='ledger') renderLedger();
+  if (ns==='fin'&&tab==='summary') renderFinSummary();
+  if (ns==='mon'&&tab==='history') renderMonthlyHistory();
+  if (ns==='mon'&&tab==='summary') renderMonthlySummary();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ===================== PIGS =====================
+function addPig() {
+  const tag = document.getElementById('pig-tag').value.trim();
+  if (!tag) return alert('Tag/ID is required.');
+  if (db.pigs.find(p => p.tag === tag)) return alert('A pig with this tag already exists.');
+  const dob = document.getElementById('pig-dob').value;
+  if (!dob) return alert('Date is required.');
+  const initWeight = parseFloat(document.getElementById('pig-init-weight').value) || null;
+  const pig = {
+    id: uid(), tag, name: document.getElementById('pig-name').value.trim(),
+    type: document.getElementById('pig-type').value, breed: document.getElementById('pig-breed').value.trim(),
+    dob, source: document.getElementById('pig-source').value,
+    purchasePrice: parseFloat(document.getElementById('pig-price').value) || 0,
+    notes: document.getElementById('pig-notes').value.trim(), status: 'active', createdAt: today()
+  };
+  db.pigs.push(pig);
+  if (initWeight) db.weights.push({ id: uid(), pigId: pig.id, date: dob, weight: initWeight, bcs: '', notes: 'Initial weight', createdAt: today() });
+  saveDB();
+  ['pig-tag','pig-name','pig-breed','pig-price','pig-init-weight','pig-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pig-dob').value = '';
+  showToast(`Pig ${tag} registered!`);
+  renderPigTable();
+}
+
+function renderPigTable() {
+  const search = (document.getElementById('pig-search')?.value||'').toLowerCase();
+  const statusF = document.getElementById('pig-filter-status')?.value||'';
+  const typeF = document.getElementById('pig-filter-type')?.value||'';
+  const tbody = document.getElementById('pig-tbody');
+  let pigs = db.pigs.filter(p => {
+    if (search && !p.tag.toLowerCase().includes(search) && !(p.name||'').toLowerCase().includes(search)) return false;
+    if (statusF && p.status !== statusF) return false;
+    if (typeF && p.type !== typeF) return false;
+    return true;
+  });
+  if (!pigs.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No pigs found.</div></td></tr>`; return; }
+  tbody.innerHTML = pigs.map(p => `
+    <tr>
+      <td><strong>${esc(p.tag)}</strong></td>
+      <td>${esc(p.name||'-')}</td>
+      <td><span class="badge badge-${p.type}">${p.type}</span></td>
+      <td>${p.dob}</td>
+      <td><span class="badge badge-${p.status}">${p.status}</span></td>
+      <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.notes||'-')}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletePig('${p.id}')">🗑</button></td>
+    </tr>`).join('');
+}
+
+function deletePig(id) {
+  if (!confirm('Delete this pig? This will also remove all its records.')) return;
+  db.pigs = db.pigs.filter(p => p.id !== id);
+  db.feedLogs = db.feedLogs.filter(f => f.pigId !== id);
+  db.weights = db.weights.filter(w => w.pigId !== id);
+  db.events = db.events.filter(e => e.pigId !== id);
+  saveDB(); renderPigTable(); showToast('Pig deleted.');
+}
+
+function populatePigSelects() {
+  const active = db.pigs.filter(p => p.status === 'active');
+  const all = db.pigs;
+  const opts = p => p.map(pig => `<option value="${pig.id}">${esc(pig.tag)}${pig.name?' - '+pig.name:''}</option>`).join('');
+  const allOpts = all.map(pig => `<option value="${pig.id}">${esc(pig.tag)}${pig.name?' - '+pig.name:''}</option>`).join('');
+  ['event-pig-id','fl-pig','wt-pig','wt-hist-pig','wt-growth-pig','fl-hist-pig','mon-specific-pig'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    const hasAll = ['wt-hist-pig','wt-growth-pig','fl-hist-pig'].includes(id);
+    el.innerHTML = (hasAll ? '<option value="">All Pigs</option>' : '') + opts(hasAll ? all : active);
+    if (prev) el.value = prev;
+  });
+}
+
+function recordEvent() {
+  const pigId = document.getElementById('event-pig-id').value;
+  if (!pigId) return alert('Select a pig.');
+  const type = document.getElementById('event-type').value;
+  const date = document.getElementById('event-date').value;
+  if (!date) return alert('Date is required.');
+  const pig = db.pigs.find(p => p.id === pigId);
+  const ev = { id: uid(), pigId, date, type, notes: document.getElementById('event-notes').value.trim(), createdAt: today() };
+  if (type === 'sold') {
+    ev.salePrice = parseFloat(document.getElementById('event-sale-price').value) || 0;
+    ev.saleWeight = parseFloat(document.getElementById('event-sale-weight').value) || 0;
+    pig.status = 'sold';
+    if (ev.salePrice > 0) db.transactions.push({ id: uid(), date, type: 'income', category: 'pig-sales', description: `Sale of pig ${pig.tag}${pig.name?' ('+pig.name+')':''}`, amount: ev.salePrice, method: 'cash', ref: '', createdAt: today() });
+  } else if (type === 'dead') {
+    pig.status = 'dead';
+  } else if (type === 'farrowed') {
+    ev.litterSize = parseInt(document.getElementById('event-litter').value) || 0;
+  }
+  db.events.push(ev);
+  saveDB();
+  renderEventTable(); renderPigTable(); populatePigSelects();
+  showToast('Event recorded.');
+}
+
+function renderEventTable() {
+  const tbody = document.getElementById('event-tbody');
+  if (!tbody) return;
+  const evs = [...db.events].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 50);
+  if (!evs.length) { tbody.innerHTML = `<tr><td colspan="4"><div class="empty">No events yet.</div></td></tr>`; return; }
+  tbody.innerHTML = evs.map(e => {
+    const pig = db.pigs.find(p => p.id === e.pigId);
+    let detail = e.notes || '';
+    if (e.type === 'sold') detail = `₦${fmt(e.salePrice,2)} · ${e.saleWeight||0}kg`;
+    if (e.type === 'farrowed') detail = `Litter: ${e.litterSize}`;
+    return `<tr><td>${e.date}</td><td>${pig?esc(pig.tag)+' '+esc(pig.name||''):'Unknown'}</td><td><span class="badge badge-${e.type==='sold'?'sold':e.type==='dead'?'dead':'active'}">${e.type}</span></td><td>${esc(detail)}</td></tr>`;
+  }).join('');
+}
+
+function toggleEventFields() {
+  const t = document.getElementById('event-type').value;
+  document.getElementById('event-sale-price-grp').style.display = t==='sold'?'':'none';
+  document.getElementById('event-sale-weight-grp').style.display = t==='sold'?'':'none';
+  document.getElementById('event-litter-grp').style.display = t==='farrowed'?'':'none';
+}
+
+// ===================== FEED LOG =====================
+function addFeedLog() {
+  const date = document.getElementById('fl-date').value;
+  const pigId = document.getElementById('fl-pig').value;
+  const amount = parseFloat(document.getElementById('fl-amount').value);
+  if (!date || !pigId || !amount) return alert('Date, Pig, and Amount are required.');
+  const feedType = document.getElementById('fl-feed-type').value;
+  const costPerKg = parseFloat(document.getElementById('fl-cost-per-kg').value) || getStockCostPerKg(feedType);
+  const entry = {
+    id: uid(), date, pigId, feedType,
+    amount, costPerKg, totalCost: amount * costPerKg,
+    time: document.getElementById('fl-time').value,
+    notes: document.getElementById('fl-notes').value.trim(), createdAt: today()
+  };
+  db.feedLogs.push(entry);
+  // Deduct from stock
+  deductStock(feedType, amount);
+  saveDB();
+  document.getElementById('fl-amount').value = '';
+  document.getElementById('fl-cost-per-kg').value = '';
+  document.getElementById('fl-notes').value = '';
+  showToast('Feed logged!');
+  renderFeedHistory(); renderFeedSummary();
+}
+
+function getStockCostPerKg(feedType) {
+  const purchases = db.purchases.filter(p => p.feedType === feedType).sort((a,b) => b.date.localeCompare(a.date));
+  return purchases.length ? purchases[0].costPerKg : 0;
+}
+
+function deductStock(feedType, amount) {
+  // Stock is calculated virtually from purchases - consumed, no need to store separate stock
+}
+
+function getStockBalance(feedType) {
+  const purchased = db.purchases.filter(p => p.feedType === feedType).reduce((s, p) => s + p.qty, 0);
+  const consumed = db.feedLogs.filter(f => f.feedType === feedType).reduce((s, f) => s + f.amount, 0);
+  return purchased - consumed;
+}
+
+function renderFeedHistory() {
+  const tbody = document.getElementById('fl-hist-tbody');
+  if (!tbody) return;
+  let logs = [...db.feedLogs].sort((a,b) => b.date.localeCompare(a.date));
+  const from = document.getElementById('fl-hist-from')?.value;
+  const to = document.getElementById('fl-hist-to')?.value;
+  const pigF = document.getElementById('fl-hist-pig')?.value;
+  if (from) logs = logs.filter(l => l.date >= from);
+  if (to) logs = logs.filter(l => l.date <= to);
+  if (pigF) logs = logs.filter(l => l.pigId === pigF);
+  if (!logs.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No feed records found.</div></td></tr>`; return; }
+  tbody.innerHTML = logs.map(l => {
+    const pig = db.pigs.find(p => p.id === l.pigId);
+    return `<tr>
+      <td>${l.date}</td>
+      <td>${pig?esc(pig.tag)+' '+(pig.name||''):'Unknown'}</td>
+      <td><span class="chip">${l.feedType}</span></td>
+      <td>${l.time||'-'}</td>
+      <td>${l.amount} kg</td>
+      <td>${fmtMoney(l.totalCost||0)}</td>
+      <td class="text-muted">${esc(l.notes||'-')}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteFeedLog('${l.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteFeedLog(id) {
+  if (!confirm('Delete this feed record?')) return;
+  db.feedLogs = db.feedLogs.filter(f => f.id !== id);
+  saveDB(); renderFeedHistory(); showToast('Deleted.');
+}
+
+function clearFeedFilter() {
+  ['fl-hist-from','fl-hist-to'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value=''; });
+  document.getElementById('fl-hist-pig').value='';
+  renderFeedHistory();
+}
+
+function renderFeedSummary() {
+  const div = document.getElementById('fl-summary-content');
+  if (!div) return;
+  const date = document.getElementById('fl-sum-date')?.value || today();
+  const logs = db.feedLogs.filter(l => l.date === date);
+  if (!logs.length) { div.innerHTML = `<div class="empty">No feed records for ${date}.</div>`; return; }
+  const byPig = {};
+  logs.forEach(l => {
+    if (!byPig[l.pigId]) byPig[l.pigId] = { total: 0, cost: 0, entries: [] };
+    byPig[l.pigId].total += l.amount;
+    byPig[l.pigId].cost += l.totalCost || 0;
+    byPig[l.pigId].entries.push(l);
+  });
+  const totalKg = logs.reduce((s,l)=>s+l.amount,0);
+  const totalCost = logs.reduce((s,l)=>s+(l.totalCost||0),0);
+  div.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:16px">
+      <div class="stat-card"><div class="val">${fmt(totalKg,1)}</div><div class="lbl">Total kg Fed</div></div>
+      <div class="stat-card accent"><div class="val">${fmtMoney(totalCost)}</div><div class="lbl">Feed Cost</div></div>
+      <div class="stat-card"><div class="val">${Object.keys(byPig).length}</div><div class="lbl">Pigs Fed</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Breakdown by Pig</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pig</th><th>Feed Type(s)</th><th>Total kg</th><th>Total Cost</th></tr></thead>
+        <tbody>${Object.entries(byPig).map(([pigId, d]) => {
+          const pig = db.pigs.find(p => p.id === pigId);
+          const types = [...new Set(d.entries.map(e => e.feedType))].join(', ');
+          return `<tr><td>${pig?esc(pig.tag)+' '+(pig.name||''):'?'}</td><td>${types}</td><td>${fmt(d.total,2)} kg</td><td>${fmtMoney(d.cost)}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>`;
+}
+
+// ===================== FEED STOCK =====================
+const FEED_TYPES = ['starter','grower','finisher','sow-lactating','sow-gestation','boar','custom'];
+
+function addPurchase() {
+  const date = document.getElementById('sp-date').value;
+  const feedType = document.getElementById('sp-type').value;
+  const qty = parseFloat(document.getElementById('sp-qty').value);
+  const costPerKg = parseFloat(document.getElementById('sp-cost-per-kg').value);
+  if (!date || !qty || !costPerKg) return alert('Date, Quantity, and Cost per kg are required.');
+  const reorder = parseFloat(document.getElementById('sp-reorder').value) || 0;
+  const p = {
+    id: uid(), date, feedType, qty, costPerKg, totalCost: qty * costPerKg,
+    supplier: document.getElementById('sp-supplier').value.trim(),
+    notes: document.getElementById('sp-notes').value.trim(), createdAt: today()
+  };
+  db.purchases.push(p);
+  if (reorder > 0) db.feedReorderLevels[feedType] = reorder;
+  // auto-add to expenses
+  db.transactions.push({ id: uid(), date, type: 'expense', category: 'feed', description: `Feed purchase: ${feedType} (${qty}kg from ${p.supplier||'supplier'})`, amount: p.totalCost, method: 'cash', ref: '', createdAt: today() });
+  saveDB();
+  ['sp-qty','sp-cost-per-kg','sp-supplier','sp-notes','sp-reorder'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('sp-date').value='';
+  showToast('Purchase recorded!');
+  renderStockLevels(); renderPurchaseHistory();
+}
+
+function renderStockLevels() {
+  const div = document.getElementById('stock-levels-content');
+  if (!div) return;
+  const allTypes = [...new Set([...db.purchases.map(p=>p.feedType), ...FEED_TYPES])];
+  const rows = allTypes.map(ft => {
+    const balance = getStockBalance(ft);
+    const reorder = db.feedReorderLevels[ft] || 0;
+    const lastBuy = db.purchases.filter(p=>p.feedType===ft).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    return { ft, balance, reorder, lastBuy };
+  }).filter(r => r.balance > 0 || r.lastBuy);
+  if (!rows.length) { div.innerHTML = `<div class="empty">No stock data yet. Record a purchase first.</div>`; return; }
+  div.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Feed Type</th><th>In Stock (kg)</th><th>Reorder Level</th><th>Status</th><th>Last Price/kg</th><th>Est. Value</th></tr></thead>
+    <tbody>${rows.map(r => {
+      const low = r.reorder > 0 && r.balance <= r.reorder;
+      const val = r.balance * (r.lastBuy?.costPerKg||0);
+      return `<tr>
+        <td><strong>${r.ft}</strong></td>
+        <td>${fmt(r.balance, 1)} kg</td>
+        <td>${r.reorder > 0 ? fmt(r.reorder,1)+' kg' : '-'}</td>
+        <td>${low ? '<span class="badge" style="background:#fee2e2;color:#991b1b">⚠ Low Stock</span>' : '<span class="badge badge-active">OK</span>'}</td>
+        <td>${r.lastBuy ? fmtMoney(r.lastBuy.costPerKg) : '-'}</td>
+        <td>${fmtMoney(val)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function renderPurchaseHistory() {
+  const tbody = document.getElementById('sp-hist-tbody');
+  if (!tbody) return;
+  const purchases = [...db.purchases].sort((a,b)=>b.date.localeCompare(a.date));
+  if (!purchases.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No purchases yet.</div></td></tr>`; return; }
+  tbody.innerHTML = purchases.map(p => `<tr>
+    <td>${p.date}</td><td>${p.feedType}</td><td>${fmt(p.qty,1)}</td><td>${fmtMoney(p.costPerKg)}</td>
+    <td>${fmtMoney(p.totalCost)}</td><td>${esc(p.supplier||'-')}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="deletePurchase('${p.id}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function deletePurchase(id) {
+  if (!confirm('Delete this purchase?')) return;
+  db.purchases = db.purchases.filter(p => p.id !== id);
+  saveDB(); renderStockLevels(); renderPurchaseHistory(); showToast('Deleted.');
+}
+
+// ===================== WEIGHTS =====================
+function addWeight() {
+  const date = document.getElementById('wt-date').value;
+  const pigId = document.getElementById('wt-pig').value;
+  const weight = parseFloat(document.getElementById('wt-weight').value);
+  if (!date || !pigId || !weight) return alert('Date, Pig, and Weight are required.');
+  db.weights.push({ id: uid(), pigId, date, weight, bcs: document.getElementById('wt-bcs').value, notes: document.getElementById('wt-notes').value.trim(), createdAt: today() });
+  saveDB();
+  document.getElementById('wt-weight').value=''; document.getElementById('wt-notes').value=''; document.getElementById('wt-bcs').value='';
+  showToast('Weight recorded!');
+  renderWeightHistory(); renderGrowthAnalysis();
+}
+
+function renderWeightHistory() {
+  const tbody = document.getElementById('wt-hist-tbody');
+  if (!tbody) return;
+  const pigF = document.getElementById('wt-hist-pig')?.value;
+  let recs = [...db.weights].sort((a,b) => b.date.localeCompare(a.date));
+  if (pigF) recs = recs.filter(r => r.pigId === pigF);
+  if (!recs.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No weight records found.</div></td></tr>`; return; }
+  tbody.innerHTML = recs.map((r, i, arr) => {
+    const pig = db.pigs.find(p => p.id === r.pigId);
+    const prev = arr.slice(i+1).find(x => x.pigId === r.pigId);
+    const change = prev ? r.weight - prev.weight : null;
+    const changeTxt = change !== null ? `<span class="${change>=0?'text-success':'text-danger'}">${change>=0?'+':''}${fmt(change,1)} kg</span>` : '-';
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${pig?esc(pig.tag)+' '+(pig.name||''):'?'}</td>
+      <td><strong>${fmt(r.weight,1)} kg</strong></td>
+      <td>${changeTxt}</td>
+      <td>${r.bcs||'-'}</td>
+      <td class="text-muted">${esc(r.notes||'-')}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteWeight('${r.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteWeight(id) {
+  if (!confirm('Delete this weight record?')) return;
+  db.weights = db.weights.filter(w => w.id !== id);
+  saveDB(); renderWeightHistory(); showToast('Deleted.');
+}
+
+function renderGrowthAnalysis() {
+  const div = document.getElementById('wt-growth-content');
+  if (!div) return;
+  const pigF = document.getElementById('wt-growth-pig')?.value;
+  const pigs = pigF ? db.pigs.filter(p=>p.id===pigF) : db.pigs.filter(p=>p.status==='active');
+  if (!pigs.length) { div.innerHTML = `<div class="empty">No active pigs.</div>`; return; }
+  div.innerHTML = pigs.map(pig => {
+    const recs = db.weights.filter(w=>w.pigId===pig.id).sort((a,b)=>a.date.localeCompare(b.date));
+    if (!recs.length) return `<div class="card"><strong>${esc(pig.tag)}</strong> — no weight records</div>`;
+    const first = recs[0]; const last = recs[recs.length-1];
+    const days = (new Date(last.date) - new Date(first.date)) / 86400000 || 1;
+    const gain = last.weight - first.weight;
+    const adg = gain / days;
+    const feed = db.feedLogs.filter(f=>f.pigId===pig.id&&f.date>=first.date&&f.date<=last.date).reduce((s,f)=>s+f.amount,0);
+    const fcr = feed > 0 && gain > 0 ? (feed / gain).toFixed(2) : 'N/A';
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>${esc(pig.tag)}${pig.name?' — '+pig.name:''}</strong>
+        <span class="badge badge-${pig.type}">${pig.type}</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="val">${fmt(last.weight,1)}</div><div class="lbl">Current Weight (kg)</div></div>
+        <div class="stat-card green"><div class="val">${fmt(gain,1)}</div><div class="lbl">Total Gain (kg)</div></div>
+        <div class="stat-card accent"><div class="val">${fmt(adg*1000,0)}g</div><div class="lbl">Avg Daily Gain</div></div>
+        <div class="stat-card"><div class="val">${fcr}</div><div class="lbl">Feed Conv. Ratio</div></div>
+      </div>
+      <div class="table-wrap mt"><table>
+        <thead><tr><th>Date</th><th>Weight (kg)</th><th>Change</th></tr></thead>
+        <tbody>${recs.map((r,i,a) => {
+          const prev = a[i-1];
+          const ch = prev ? r.weight - prev.weight : null;
+          return `<tr><td>${r.date}</td><td>${fmt(r.weight,1)} kg</td><td>${ch!==null?`<span class="${ch>=0?'text-success':'text-danger'}">${ch>=0?'+':''}${fmt(ch,1)}</span>`:'-'}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== FINANCE =====================
+const expenseCategories = ['feed','veterinary','labour','utilities','equipment','medicine','transport','maintenance','other-expense'];
+const incomeCategories = ['pig-sales','piglet-sales','manure','other-income'];
+
+function updateFinCategories() {
+  const type = document.getElementById('fin-type').value;
+  const cats = type === 'expense' ? expenseCategories : incomeCategories;
+  document.getElementById('fin-category').innerHTML = cats.map(c => `<option value="${c}">${c.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</option>`).join('');
+}
+
+function addTransaction() {
+  const date = document.getElementById('fin-date').value;
+  const amount = parseFloat(document.getElementById('fin-amount').value);
+  const desc = document.getElementById('fin-desc').value.trim();
+  if (!date || !amount || !desc) return alert('Date, Amount, and Description are required.');
+  db.transactions.push({
+    id: uid(), date, type: document.getElementById('fin-type').value,
+    category: document.getElementById('fin-category').value,
+    description: desc, amount, method: document.getElementById('fin-method').value,
+    ref: document.getElementById('fin-ref').value.trim(), createdAt: today()
+  });
+  saveDB();
+  document.getElementById('fin-amount').value=''; document.getElementById('fin-desc').value=''; document.getElementById('fin-ref').value='';
+  showToast('Transaction saved!');
+  renderLedger(); renderFinSummary();
+}
+
+function renderLedger() {
+  const tbody = document.getElementById('fin-ledger-tbody');
+  if (!tbody) return;
+  let txns = [...db.transactions].sort((a,b)=>b.date.localeCompare(a.date));
+  const from = document.getElementById('fin-from')?.value;
+  const to = document.getElementById('fin-to')?.value;
+  const typeF = document.getElementById('fin-filter-type')?.value;
+  const catF = document.getElementById('fin-filter-cat')?.value;
+  if (from) txns = txns.filter(t=>t.date>=from);
+  if (to) txns = txns.filter(t=>t.date<=to);
+  if (typeF) txns = txns.filter(t=>t.type===typeF);
+  if (catF) txns = txns.filter(t=>t.category===catF);
+  // Update category filter options
+  const catSel = document.getElementById('fin-filter-cat');
+  if (catSel) {
+    const prev = catSel.value;
+    const allCats = [...new Set(db.transactions.map(t=>t.category))];
+    catSel.innerHTML = `<option value="">All Categories</option>` + allCats.map(c=>`<option value="${c}">${c.replace(/-/g,' ')}</option>`).join('');
+    if (prev) catSel.value = prev;
+  }
+  if (!txns.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No transactions found.</div></td></tr>`; return; }
+  const totalIncome = txns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const totalExpense = txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  tbody.innerHTML = txns.map(t => `<tr>
+    <td>${t.date}</td>
+    <td><span class="badge" style="background:${t.type==='income'?'#d1fadf':'#fee2e2'};color:${t.type==='income'?'#166534':'#991b1b'}">${t.type}</span></td>
+    <td>${esc(t.category||'').replace(/-/g,' ')}</td>
+    <td>${esc(t.description)}</td>
+    <td>${esc(t.method||'-')}</td>
+    <td>${esc(t.ref||'-')}</td>
+    <td class="${t.type==='income'?'text-success':'text-danger'}"><strong>${fmtMoney(t.amount)}</strong></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deleteTxn('${t.id}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function deleteTxn(id) {
+  if (!confirm('Delete this transaction?')) return;
+  db.transactions = db.transactions.filter(t=>t.id!==id);
+  saveDB(); renderLedger(); showToast('Deleted.');
+}
+
+function clearFinFilter() {
+  ['fin-from','fin-to'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).value='';});
+  document.getElementById('fin-filter-type').value='';
+  document.getElementById('fin-filter-cat').value='';
+  renderLedger();
+}
+
+function renderFinSummary() {
+  const div = document.getElementById('fin-summary-content');
+  if (!div) return;
+  const month = document.getElementById('fin-sum-month')?.value;
+  let txns = db.transactions;
+  if (month) txns = txns.filter(t => t.date.startsWith(month));
+  const income = txns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const profit = income - expense;
+  const byCat = {};
+  txns.forEach(t => { if (!byCat[t.category]) byCat[t.category]={type:t.type,total:0}; byCat[t.category].total+=t.amount; });
+  div.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card green"><div class="val">${fmtMoney(income)}</div><div class="lbl">Total Income</div></div>
+      <div class="stat-card red"><div class="val">${fmtMoney(expense)}</div><div class="lbl">Total Expenses</div></div>
+      <div class="stat-card ${profit>=0?'green':'red'}"><div class="val">${fmtMoney(Math.abs(profit))}</div><div class="lbl">${profit>=0?'Net Profit':'Net Loss'}</div></div>
+    </div>
+    <div class="row mt">
+      <div class="card">
+        <div class="card-title">Expenses by Category</div>
+        ${Object.entries(byCat).filter(([,v])=>v.type==='expense').sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span>${k.replace(/-/g,' ')}</span><strong class="text-danger">${fmtMoney(v.total)}</strong>
+          </div>`).join('')||'<div class="empty">No expenses</div>'}
+      </div>
+      <div class="card">
+        <div class="card-title">Income by Category</div>
+        ${Object.entries(byCat).filter(([,v])=>v.type==='income').sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+            <span>${k.replace(/-/g,' ')}</span><strong class="text-success">${fmtMoney(v.total)}</strong>
+          </div>`).join('')||'<div class="empty">No income</div>'}
+      </div>
+    </div>`;
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-NG', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const activePigs = db.pigs.filter(p=>p.status==='active').length;
+  const totalFeedToday = db.feedLogs.filter(l=>l.date===today()).reduce((s,l)=>s+l.amount,0);
+  const income = db.transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = db.transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const monthExpense = db.transactions.filter(t=>t.type==='expense'&&t.date.startsWith(thisMonth)).reduce((s,t)=>s+t.amount,0);
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card"><div class="val">${activePigs}</div><div class="lbl">Active Pigs</div></div>
+    <div class="stat-card accent"><div class="val">${fmt(totalFeedToday,1)} kg</div><div class="lbl">Feed Today</div></div>
+    <div class="stat-card green"><div class="val">${fmtMoney(income)}</div><div class="lbl">Total Income</div></div>
+    <div class="stat-card red"><div class="val">${fmtMoney(expense)}</div><div class="lbl">Total Expenses</div></div>
+    <div class="stat-card ${income-expense>=0?'green':'red'}"><div class="val">${fmtMoney(Math.abs(income-expense))}</div><div class="lbl">${income-expense>=0?'Net Profit':'Net Loss'}</div></div>
+    <div class="stat-card"><div class="val">${fmtMoney(monthExpense)}</div><div class="lbl">This Month Spend</div></div>`;
+
+  // Recent feed
+  const recentFeed = [...db.feedLogs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('dash-feed-recent').innerHTML = recentFeed.length ? recentFeed.map(l=>{
+    const pig = db.pigs.find(p=>p.id===l.pigId);
+    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.83rem"><span>${l.date} · ${pig?pig.tag:'?'}</span><strong>${l.amount}kg ${l.feedType}</strong></div>`;
+  }).join('') : `<div class="empty">No feed records yet.</div>`;
+
+  // Stock alerts
+  const alerts = FEED_TYPES.map(ft=>{
+    const bal = getStockBalance(ft);
+    const rl = db.feedReorderLevels[ft]||0;
+    return rl>0&&bal<=rl?{ft,bal,rl}:null;
+  }).filter(Boolean);
+  document.getElementById('dash-stock-alerts').innerHTML = alerts.length ? alerts.map(a=>`
+    <div class="alert alert-warning">⚠ <strong>${a.ft}</strong>: ${fmt(a.bal,1)}kg remaining (reorder at ${fmt(a.rl,1)}kg)</div>`).join('') : `<div class="empty">✅ All stock levels OK.</div>`;
+
+  // Recent transactions
+  const recentTxns = [...db.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('dash-finance-recent').innerHTML = recentTxns.length ? recentTxns.map(t=>`
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.83rem">
+      <span>${t.date} · ${esc(t.description).slice(0,30)}</span>
+      <strong class="${t.type==='income'?'text-success':'text-danger'}">${fmtMoney(t.amount)}</strong>
+    </div>`).join('') : `<div class="empty">No transactions yet.</div>`;
+
+  // Upcoming monthly input due dates
+  const due30 = new Date(); due30.setDate(due30.getDate() + 30);
+  const dueSoon = (db.monthlyInputs||[]).filter(r => r.nextDue && new Date(r.nextDue) <= due30 && new Date(r.nextDue) >= new Date(today())).sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
+  const stockAlertsEl = document.getElementById('dash-stock-alerts');
+  if (dueSoon.length) {
+    stockAlertsEl.innerHTML += dueSoon.map(r=>`<div class="alert alert-warning">⏰ <strong>${esc(r.product)}</strong> (${r.category}) due ${r.nextDue}</div>`).join('');
+  }
+
+  // Recent weights
+  const recentWts = [...db.weights].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('dash-weights-recent').innerHTML = recentWts.length ? recentWts.map(w=>{
+    const pig = db.pigs.find(p=>p.id===w.pigId);
+    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.83rem"><span>${w.date} · ${pig?pig.tag:'?'}</span><strong>${fmt(w.weight,1)} kg</strong></div>`;
+  }).join('') : `<div class="empty">No weight records yet.</div>`;
+}
+
+// ===================== MONTHLY INPUTS =====================
+const MON_CAT_COLORS = {
+  medication:  { bg: '#fee2e2', color: '#991b1b' },
+  vaccine:     { bg: '#dbeafe', color: '#1e40af' },
+  dewormer:    { bg: '#d1fae5', color: '#065f46' },
+  vitamin:     { bg: '#fef9c3', color: '#854d0e' },
+  disinfectant:{ bg: '#f3e8ff', color: '#6b21a8' },
+  other:       { bg: '#f1f5f9', color: '#475569' },
+};
+
+function updateMonSubcategory() { /* reserved for future subcategory logic */ }
+
+function updateMonScopeVisibility() {
+  const scope = document.getElementById('mon-scope').value;
+  document.getElementById('mon-specific-pig-grp').style.display = scope === 'specific' ? '' : 'none';
+}
+
+function addMonthlyInput() {
+  const month = document.getElementById('mon-month').value;
+  if (!month) return alert('Month is required.');
+  const product = document.getElementById('mon-product').value.trim();
+  if (!product) return alert('Product name is required.');
+  const totalCost = parseFloat(document.getElementById('mon-total-cost').value) || 0;
+  const scope = document.getElementById('mon-scope').value;
+  let specificPigs = [];
+  if (scope === 'specific') {
+    const sel = document.getElementById('mon-specific-pig');
+    specificPigs = Array.from(sel.selectedOptions).map(o => o.value);
+  }
+  const entry = {
+    id: uid(), month, category: document.getElementById('mon-category').value,
+    product, scope, specificPigs,
+    qty: document.getElementById('mon-qty').value.trim(),
+    unitCost: parseFloat(document.getElementById('mon-unit-cost').value) || 0,
+    totalCost, administeredBy: document.getElementById('mon-by').value.trim(),
+    nextDue: document.getElementById('mon-next-due').value,
+    supplier: document.getElementById('mon-supplier').value.trim(),
+    withdrawal: parseInt(document.getElementById('mon-withdrawal').value) || 0,
+    notes: document.getElementById('mon-notes').value.trim(),
+    createdAt: today()
+  };
+  db.monthlyInputs = db.monthlyInputs || [];
+  db.monthlyInputs.push(entry);
+  if (document.getElementById('mon-add-expense').checked && totalCost > 0) {
+    db.transactions.push({
+      id: uid(), date: month + '-01', type: 'expense', category: 'medicine',
+      description: `${entry.category}: ${product} (${month})`,
+      amount: totalCost, method: 'cash', ref: '', createdAt: today()
+    });
+  }
+  saveDB();
+  ['mon-product','mon-qty','mon-unit-cost','mon-total-cost','mon-by','mon-supplier','mon-withdrawal','mon-notes','mon-next-due'].forEach(id => document.getElementById(id).value = '');
+  showToast('Monthly input saved!');
+  renderMonthlyHistory(); renderMonthlySummary();
+}
+
+function renderMonthlyHistory() {
+  const tbody = document.getElementById('mon-hist-tbody');
+  if (!tbody) return;
+  const mf = document.getElementById('mon-hist-month')?.value;
+  const cf = document.getElementById('mon-hist-cat')?.value;
+  let recs = [...(db.monthlyInputs||[])].sort((a,b) => b.month.localeCompare(a.month));
+  if (mf) recs = recs.filter(r => r.month === mf);
+  if (cf) recs = recs.filter(r => r.category === cf);
+  if (!recs.length) { tbody.innerHTML = `<tr><td colspan="9"><div class="empty">No monthly input records found.</div></td></tr>`; return; }
+  tbody.innerHTML = recs.map(r => {
+    const c = MON_CAT_COLORS[r.category] || MON_CAT_COLORS.other;
+    const scopeLabel = r.scope === 'specific'
+      ? r.specificPigs.map(id => { const p = db.pigs.find(x=>x.id===id); return p ? p.tag : '?'; }).join(', ')
+      : r.scope.replace(/-/g,' ');
+    return `<tr>
+      <td>${r.month}</td>
+      <td><span class="badge" style="background:${c.bg};color:${c.color}">${r.category}</span></td>
+      <td><strong>${esc(r.product)}</strong>${r.supplier?`<br><span class="text-muted" style="font-size:0.75rem">${esc(r.supplier)}</span>`:''}${r.withdrawal?`<br><span class="chip">⏱ ${r.withdrawal}d withdrawal</span>`:''}  </td>
+      <td>${esc(scopeLabel)}</td>
+      <td>${esc(r.qty||'-')}</td>
+      <td>${r.totalCost > 0 ? fmtMoney(r.totalCost) : '-'}</td>
+      <td>${esc(r.administeredBy||'-')}</td>
+      <td>${r.nextDue ? `<span style="color:var(--accent);font-weight:600">${r.nextDue}</span>` : '-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMonthlyInput('${r.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteMonthlyInput(id) {
+  if (!confirm('Delete this record?')) return;
+  db.monthlyInputs = (db.monthlyInputs||[]).filter(r => r.id !== id);
+  saveDB(); renderMonthlyHistory(); renderMonthlySummary(); showToast('Deleted.');
+}
+
+function clearMonFilter() {
+  document.getElementById('mon-hist-month').value = '';
+  document.getElementById('mon-hist-cat').value = '';
+  renderMonthlyHistory();
+}
+
+function renderMonthlySummary() {
+  const div = document.getElementById('mon-summary-content');
+  if (!div) return;
+  const selMonth = document.getElementById('mon-sum-month')?.value;
+  let recs = db.monthlyInputs || [];
+  if (selMonth) recs = recs.filter(r => r.month === selMonth);
+
+  if (!recs.length) { div.innerHTML = `<div class="empty">No monthly input records${selMonth ? ' for ' + selMonth : ''}.</div>`; return; }
+
+  // Group by month
+  const byMonth = {};
+  recs.forEach(r => { if (!byMonth[r.month]) byMonth[r.month] = []; byMonth[r.month].push(r); });
+  const months = Object.keys(byMonth).sort((a,b) => b.localeCompare(a));
+
+  // Upcoming due dates (next 30 days)
+  const today30 = new Date(); today30.setDate(today30.getDate() + 30);
+  const upcoming = (db.monthlyInputs||[]).filter(r => r.nextDue && new Date(r.nextDue) <= today30 && new Date(r.nextDue) >= new Date(today()));
+
+  div.innerHTML = months.map(month => {
+    const items = byMonth[month];
+    const totalCost = items.reduce((s,r) => s + (r.totalCost||0), 0);
+    const byCat = {};
+    items.forEach(r => { if (!byCat[r.category]) byCat[r.category] = []; byCat[r.category].push(r); });
+
+    return `<div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <h3 style="font-size:1rem;color:var(--primary-dark)">${formatMonth(month)}</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <span class="chip">${items.length} input${items.length!==1?'s':''}</span>
+          ${totalCost > 0 ? `<strong style="color:var(--danger)">${fmtMoney(totalCost)}</strong>` : ''}
+        </div>
+      </div>
+      ${Object.entries(byCat).map(([cat, catItems]) => {
+        const c = MON_CAT_COLORS[cat] || MON_CAT_COLORS.other;
+        const catTotal = catItems.reduce((s,r)=>s+(r.totalCost||0),0);
+        return `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span class="badge" style="background:${c.bg};color:${c.color};font-size:0.78rem">${cat.toUpperCase()}</span>
+            ${catTotal > 0 ? `<span style="font-size:0.8rem;color:var(--text-muted)">${fmtMoney(catTotal)}</span>` : ''}
+          </div>
+          ${catItems.map(r => `
+            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;padding:8px 10px;background:var(--bg);border-radius:6px;margin-bottom:4px;gap:6px">
+              <div>
+                <strong style="font-size:0.88rem">${esc(r.product)}</strong>
+                ${r.supplier?`<span class="text-muted" style="font-size:0.75rem"> · ${esc(r.supplier)}</span>`:''}
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">
+                  ${r.scope === 'specific'
+                    ? 'Pigs: ' + r.specificPigs.map(id=>{const p=db.pigs.find(x=>x.id===id);return p?p.tag:'?';}).join(', ')
+                    : r.scope.replace(/-/g,' ')}
+                  ${r.qty ? ' · ' + esc(r.qty) : ''}
+                  ${r.administeredBy ? ' · by ' + esc(r.administeredBy) : ''}
+                  ${r.withdrawal ? ` · <span style="color:var(--accent)">⏱ ${r.withdrawal}d withdrawal</span>` : ''}
+                </div>
+                ${r.notes ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;font-style:italic">${esc(r.notes)}</div>` : ''}
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                ${r.totalCost > 0 ? `<div style="font-weight:700;color:var(--danger)">${fmtMoney(r.totalCost)}</div>` : ''}
+                ${r.nextDue ? `<div style="font-size:0.75rem;color:var(--accent)">Next: ${r.nextDue}</div>` : ''}
+              </div>
+            </div>`).join('')}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('') + (upcoming.length && !selMonth ? `
+    <div class="card" style="border:2px solid var(--accent)">
+      <div class="card-title" style="color:var(--accent)">⏰ Due in the Next 30 Days</div>
+      ${upcoming.map(r => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem">
+          <span><strong>${esc(r.product)}</strong> <span class="text-muted">(${r.category})</span></span>
+          <strong style="color:var(--accent)">${r.nextDue}</strong>
+        </div>`).join('')}
+    </div>` : '');
+}
+
+function formatMonth(ym) {
+  const [y, m] = ym.split('-');
+  return new Date(+y, +m-1, 1).toLocaleDateString('en-NG', { month: 'long', year: 'numeric' });
+}
+
+// ===================== REPORTS =====================
+function renderReport() {
+  const div = document.getElementById('report-content');
+  if (!div) return;
+  const from = document.getElementById('rep-from')?.value || '2000-01-01';
+  const to = document.getElementById('rep-to')?.value || '2099-12-31';
+  const txns = db.transactions.filter(t=>t.date>=from&&t.date<=to);
+  const feeds = db.feedLogs.filter(f=>f.date>=from&&f.date<=to);
+  const income = txns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = txns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const feedKg = feeds.reduce((s,f)=>s+f.amount,0);
+  const feedCost = feeds.reduce((s,f)=>s+(f.totalCost||0),0);
+  div.innerHTML = `
+    <div class="card">
+      <div class="card-title">Farm Summary ${from!=='2000-01-01'?`(${from} to ${to})`:'(All Time)'}</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="val">${db.pigs.length}</div><div class="lbl">Total Pigs Registered</div></div>
+        <div class="stat-card"><div class="val">${db.pigs.filter(p=>p.status==='active').length}</div><div class="lbl">Currently Active</div></div>
+        <div class="stat-card green"><div class="val">${fmtMoney(income)}</div><div class="lbl">Income</div></div>
+        <div class="stat-card red"><div class="val">${fmtMoney(expense)}</div><div class="lbl">Expenses</div></div>
+        <div class="stat-card ${income-expense>=0?'green':'red'}"><div class="val">${fmtMoney(Math.abs(income-expense))}</div><div class="lbl">${income-expense>=0?'Profit':'Loss'}</div></div>
+        <div class="stat-card accent"><div class="val">${fmt(feedKg,1)} kg</div><div class="lbl">Feed Consumed</div></div>
+      </div>
+    </div>
+    <div class="row mt">
+      <div class="card"><div class="card-title">Pig Inventory Summary</div>
+        <p style="font-size:0.85rem">Active: <strong>${db.pigs.filter(p=>p.status==='active').length}</strong> · Sold: <strong>${db.pigs.filter(p=>p.status==='sold').length}</strong> · Deaths: <strong>${db.pigs.filter(p=>p.status==='dead').length}</strong></p>
+        <p style="font-size:0.85rem;margin-top:8px">Boars: ${db.pigs.filter(p=>p.type==='boar').length} · Sows: ${db.pigs.filter(p=>p.type==='sow').length} · Piglets: ${db.pigs.filter(p=>p.type==='piglet').length} · Growers: ${db.pigs.filter(p=>p.type==='grower').length} · Finishers: ${db.pigs.filter(p=>p.type==='finisher').length}</p>
+      </div>
+      <div class="card"><div class="card-title">Feed Summary</div>
+        <p style="font-size:0.85rem">Total Consumed: <strong>${fmt(feedKg,1)} kg</strong></p>
+        <p style="font-size:0.85rem;margin-top:4px">Feed Cost: <strong>${fmtMoney(feedCost)}</strong></p>
+        <p style="font-size:0.85rem;margin-top:4px">Feed % of Expenses: <strong>${expense>0?fmt((feedCost/expense)*100,1)+'%':'N/A'}</strong></p>
+      </div>
+    </div>`;
+}
+
+function exportCSV() {
+  const rows = [['Date','Type','Category','Description','Amount']];
+  db.transactions.sort((a,b)=>a.date.localeCompare(b.date)).forEach(t => rows.push([t.date,t.type,t.category,t.description,t.amount]));
+  const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('lacoline-transactions.csv', csv, 'text/csv');
+}
+
+function exportData() {
+  download('lacoline-backup-'+today()+'.json', JSON.stringify(db, null, 2), 'application/json');
+}
+
+function importData() { document.getElementById('import-file').click(); }
+function doImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.pigs || !data.transactions) return alert('Invalid backup file.');
+      if (!confirm('This will replace ALL current data. Continue?')) return;
+      db = data; saveDB();
+      showToast('Data restored!'); showPage('dashboard');
+    } catch { alert('Failed to parse file.'); }
+  };
+  reader.readAsText(file);
+}
+
+function download(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type:mime}));
+  a.download = name; a.click();
+}
+
+// ===================== UTILS =====================
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#2d6a4f;color:#fff;padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:opacity 0.3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date on all date inputs
+  document.querySelectorAll('input[type="date"]').forEach(el => { if (!el.value) el.value = today(); });
+  document.querySelectorAll('input[type="month"]').forEach(el => { if (!el.value) el.value = today().slice(0,7); });
+  document.getElementById('fl-sum-date').value = today();
+  updateFinCategories();
+  populatePigSelects();
+  toggleEventFields();
+  if (!db.monthlyInputs) db.monthlyInputs = [];
+  renderDashboard();
+});
+</script>
+</body>
+</html>
